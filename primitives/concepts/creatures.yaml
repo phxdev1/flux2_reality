@@ -18,9 +18,13 @@ triggers:
   - griffin
   - unicorn
 
+prompt:
+  suffix: "detailed creature design, anatomically believable, dynamic pose"
+  keywords:
+    - majestic
+    - powerful
+    - fantastical
+
 params:
   guidance_bias: 1.0
   num_steps_min: 45
-
-inject:
-  modulation: true

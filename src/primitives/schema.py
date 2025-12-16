@@ -12,6 +12,55 @@ import torch
 
 
 @dataclass
+class PromptModifier:
+    """Prompt injection modifications applied by a primitive.
+
+    Allows primitives to modify the generation prompt without any training:
+    - prefix: Added before the user's prompt
+    - suffix: Added after the user's prompt
+    - keywords: Injected naturally into the prompt
+    - negative: Concepts to avoid (if model supports negative prompts)
+    - replace: Find/replace patterns to apply
+    """
+
+    prefix: str = ""  # "film noir style, high contrast,"
+    suffix: str = ""  # ", dramatic lighting, cinematic"
+    keywords: list[str] = field(default_factory=list)  # ["moody", "shadows"]
+    negative: list[str] = field(default_factory=list)  # ["bright", "colorful"]
+    replace: dict[str, str] = field(default_factory=dict)  # {"happy": "melancholic"}
+
+    def apply(self, prompt: str, strength: float = 1.0) -> str:
+        """Apply prompt modifications with optional strength scaling."""
+        result = prompt
+
+        # Apply replacements first
+        for find, repl in self.replace.items():
+            result = result.replace(find, repl)
+
+        # Build parts
+        parts = []
+
+        if self.prefix:
+            parts.append(self.prefix.strip())
+
+        parts.append(result)
+
+        # Inject keywords naturally
+        if self.keywords and strength > 0.5:
+            keyword_str = ", ".join(self.keywords)
+            parts.append(keyword_str)
+
+        if self.suffix:
+            parts.append(self.suffix.strip())
+
+        return ", ".join(p for p in parts if p)
+
+    def get_negative(self) -> str:
+        """Get negative prompt string."""
+        return ", ".join(self.negative)
+
+
+@dataclass
 class PrimitiveParams:
     """Pipeline parameter modifications applied by a primitive."""
 
@@ -65,6 +114,9 @@ class Primitive:
     weights_path: Optional[Path] = None
     reference_images: list[Path] = field(default_factory=list)
 
+    # Prompt modifications (no training needed!)
+    prompt: PromptModifier = field(default_factory=PromptModifier)
+
     # Pipeline modifications
     params: PrimitiveParams = field(default_factory=PrimitiveParams)
 
@@ -99,6 +151,16 @@ class Primitive:
 
         base_dir = yaml_path.parent
 
+        # Parse prompt modifiers
+        prompt_data = data.get("prompt", {})
+        prompt = PromptModifier(
+            prefix=prompt_data.get("prefix", ""),
+            suffix=prompt_data.get("suffix", ""),
+            keywords=prompt_data.get("keywords", []),
+            negative=prompt_data.get("negative", []),
+            replace=prompt_data.get("replace", {}),
+        )
+
         # Parse params
         params_data = data.get("params", {})
         params = PrimitiveParams(**params_data)
@@ -129,6 +191,7 @@ class Primitive:
             embedding_path=embedding_path,
             weights_path=weights_path,
             reference_images=reference_images,
+            prompt=prompt,
             params=params,
             inject=inject,
         )
@@ -155,6 +218,22 @@ class Primitive:
             data["reference_images"] = [
                 str(p.relative_to(base_dir)) for p in self.reference_images
             ]
+
+        # Only include non-default prompt modifiers
+        prompt_dict = {}
+        default_prompt = PromptModifier()
+        if self.prompt.prefix != default_prompt.prefix:
+            prompt_dict["prefix"] = self.prompt.prefix
+        if self.prompt.suffix != default_prompt.suffix:
+            prompt_dict["suffix"] = self.prompt.suffix
+        if self.prompt.keywords != default_prompt.keywords:
+            prompt_dict["keywords"] = self.prompt.keywords
+        if self.prompt.negative != default_prompt.negative:
+            prompt_dict["negative"] = self.prompt.negative
+        if self.prompt.replace != default_prompt.replace:
+            prompt_dict["replace"] = self.prompt.replace
+        if prompt_dict:
+            data["prompt"] = prompt_dict
 
         # Only include non-default params
         params_dict = {}

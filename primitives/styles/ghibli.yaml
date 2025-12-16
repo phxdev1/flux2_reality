@@ -15,12 +15,22 @@ triggers:
   - totoro
   - spirited
 
+prompt:
+  prefix: "studio ghibli style, hand-painted anime aesthetic"
+  suffix: "soft lighting, whimsical atmosphere, detailed background art"
+  keywords:
+    - watercolor
+    - pastoral
+    - gentle
+    - nostalgic
+  negative:
+    - photorealistic
+    - dark
+    - gritty
+    - harsh
+
 params:
   guidance_bias: 0.5
-  saturation: 1.1
+  saturation: 1.15
   contrast: 0.95
   num_steps_min: 45
-
-inject:
-  modulation: true
-  cross_attention: true

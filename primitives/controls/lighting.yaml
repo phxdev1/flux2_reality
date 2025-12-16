@@ -15,11 +15,15 @@ triggers:
   - spotlight
   - backlit
   - silhouette
+  - golden hour
+
+prompt:
+  suffix: "dramatic lighting, volumetric rays, atmospheric depth"
+  keywords:
+    - rim lighting
+    - light rays
+    - ambient occlusion
 
 params:
   guidance_bias: 0.8
   contrast: 1.15
-
-inject:
-  modulation: true
-  cross_attention: true

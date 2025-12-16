@@ -7,7 +7,7 @@ This module provides the core infrastructure for semantic-based dynamic pipeline
 - Parser: Triple parser for noun → predicate → noun extraction
 """
 
-from .schema import Primitive, PrimitiveParams, PrimitiveInject, PrimitiveMatch
+from .schema import Primitive, PrimitiveParams, PrimitiveInject, PrimitiveMatch, PromptModifier
 from .matcher import SemanticMatcher
 from .loader import PrimitiveLoader
 from .parser import TripleParser, Triple
@@ -17,6 +17,7 @@ __all__ = [
     "PrimitiveParams",
     "PrimitiveInject",
     "PrimitiveMatch",
+    "PromptModifier",
     "SemanticMatcher",
     "PrimitiveLoader",
     "TripleParser",

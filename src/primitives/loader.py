@@ -10,7 +10,7 @@ import torch
 from torch import nn
 from safetensors.torch import load_file as load_safetensors
 
-from .schema import Primitive, PrimitiveMatch, PrimitiveParams
+from .schema import Primitive, PrimitiveMatch, PrimitiveParams, PromptModifier
 
 
 class PrimitiveLoader:
@@ -221,6 +221,91 @@ class PrimitiveLoader:
             result["num_steps"] = steps
 
         return result
+
+    def compose_prompt(
+        self,
+        matches: list[PrimitiveMatch],
+        base_prompt: str,
+    ) -> tuple[str, str]:
+        """Compose prompt from multiple matched primitives.
+
+        Applies prompt modifications (prefix, suffix, keywords) from all matched
+        primitives, weighted by their match scores.
+
+        Args:
+            matches: List of primitive matches
+            base_prompt: The original user prompt
+
+        Returns:
+            Tuple of (modified_prompt, negative_prompt)
+        """
+        if not matches:
+            return base_prompt, ""
+
+        # Collect all modifications, sorted by score (highest first)
+        sorted_matches = sorted(matches, key=lambda m: m.score, reverse=True)
+
+        # Build prefix parts (highest scoring first)
+        prefixes = []
+        suffixes = []
+        all_keywords = []
+        all_negatives = []
+
+        for match in sorted_matches:
+            pm = match.primitive.prompt
+
+            # Only apply if score is high enough
+            if match.score < 0.5:
+                continue
+
+            if pm.prefix:
+                prefixes.append(pm.prefix)
+            if pm.suffix:
+                suffixes.append(pm.suffix)
+            if pm.keywords:
+                all_keywords.extend(pm.keywords)
+            if pm.negative:
+                all_negatives.extend(pm.negative)
+
+        # Apply replacements from all primitives
+        modified = base_prompt
+        for match in sorted_matches:
+            if match.score >= 0.5:
+                for find, repl in match.primitive.prompt.replace.items():
+                    modified = modified.replace(find, repl)
+
+        # Build final prompt
+        parts = []
+
+        # Add prefixes (deduplicated, order preserved)
+        seen_prefixes = set()
+        for p in prefixes:
+            if p not in seen_prefixes:
+                parts.append(p)
+                seen_prefixes.add(p)
+
+        # Add the modified base prompt
+        parts.append(modified)
+
+        # Add unique keywords
+        unique_keywords = list(dict.fromkeys(all_keywords))
+        if unique_keywords:
+            parts.append(", ".join(unique_keywords))
+
+        # Add suffixes (deduplicated)
+        seen_suffixes = set()
+        for s in suffixes:
+            if s not in seen_suffixes:
+                parts.append(s)
+                seen_suffixes.add(s)
+
+        final_prompt = ", ".join(p for p in parts if p)
+
+        # Build negative prompt
+        unique_negatives = list(dict.fromkeys(all_negatives))
+        negative_prompt = ", ".join(unique_negatives)
+
+        return final_prompt, negative_prompt
 
     def apply_to_model(
         self,

@@ -15,16 +15,22 @@ triggers:
   - film noir
   - dramatic lighting
 
-# Assets (placeholder paths - create these when training)
-# embedding: noir.embed.pt
-# weights: noir.safetensors
+# Prompt injection (no training needed!)
+prompt:
+  prefix: "film noir style, high contrast, dramatic shadows"
+  suffix: "moody atmosphere, cinematic lighting, dark aesthetic"
+  keywords:
+    - chiaroscuro
+    - atmospheric
+    - mysterious
+  negative:
+    - bright
+    - colorful
+    - cheerful
+    - saturated
 
 params:
   guidance_bias: 1.5
   contrast: 1.3
-  saturation: 0.8
+  saturation: 0.7
   num_steps_min: 40
-
-inject:
-  modulation: true
-  cross_attention: true
