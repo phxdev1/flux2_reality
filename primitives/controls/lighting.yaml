@@ -1,0 +1,25 @@
+name: lighting
+version: "1.0"
+description: "Dramatic lighting control - illumination, shadows, atmosphere"
+category: controls
+
+triggers:
+  - illuminates
+  - lights
+  - glowing
+  - neon
+  - sunset
+  - sunrise
+  - moonlight
+  - candlelight
+  - spotlight
+  - backlit
+  - silhouette
+
+params:
+  guidance_bias: 0.8
+  contrast: 1.15
+
+inject:
+  modulation: true
+  cross_attention: true

@@ -2,29 +2,125 @@
 
 ## Project Vision
 
-This is a **Flux-based Reality Engine** - a system where words become reality. Describe anything and FLUX.2 manifests it as an image. The engine runs on RunPod GPU infrastructure for high-performance generation.
+This is a **Flux-based Reality Engine** - a system where words become reality. Describe anything using semantic triples and FLUX.2 manifests it as an image. The engine uses **emergent semantic structuring** with noun-predicate-noun abstractions to dynamically assemble generation pipelines.
 
-## Tech Stack
+## Core Innovation: Semantic Primitives
 
-- **Model**: FLUX.2 [dev] - 32B parameter flow matching transformer
-- **Runtime**: Python 3.10-3.12, PyTorch 2.8, CUDA 12.6+
-- **Infrastructure**: RunPod (H100/A100 GPUs recommended)
-- **Text Encoding**: Mistral-Small-3.2-24B-Instruct-2506
-- **Prompt Enhancement**: Local Mistral or OpenRouter API
+Instead of complex code, we use **semantic similarity** to dynamically build image generation pipelines:
+
+```
+"dragon → soars over → noir city"
+        ↓ embed & match
+[creatures: 0.87] [motion: 0.72] [noir: 0.91] [architecture: 0.68]
+        ↓ load matched primitives
+Dynamic pipeline with merged LoRAs, adjusted guidance, shaped schedule
+        ↓
+Generated image
+```
 
 ## Architecture
 
 ```
-src/flux2/
-├── model.py          # Core 32B flow matching transformer
-├── autoencoder.py    # FLUX.2 VAE encoder/decoder
-├── text_encoder.py   # Mistral text embeddings
-├── sampling.py       # Denoising & scheduling
-├── util.py           # Model loading utilities
-└── openrouter_api_client.py  # API for prompt upsampling
+┌─────────────────────────────────────────────────────────────────┐
+│  SEMANTIC LAYER                                                 │
+│  "dragon → soars over → noir city"                              │
+│       ↓                                                         │
+│  Triple Parser + Mistral Embedder                               │
+└─────────────────────────────────────────────────────────────────┘
+                              ↓ cosine similarity
+┌─────────────────────────────────────────────────────────────────┐
+│  PRIMITIVE LIBRARY (primitives/)                                │
+│                                                                 │
+│  styles/     → noir.safetensors, ghibli.safetensors            │
+│  concepts/   → creatures.safetensors, architecture.safetensors  │
+│  controls/   → pose.safetensors, depth.safetensors             │
+│  speed/      → fast.safetensors (LCM), quality.safetensors     │
+└─────────────────────────────────────────────────────────────────┘
+                              ↓ dynamic load & merge
+┌─────────────────────────────────────────────────────────────────┐
+│  FLUX.2 PIPELINE                                                │
+│  - Primitives modify: guidance, steps, schedule shape           │
+│  - LoRA weights merged by similarity score                      │
+│  - Modulation vectors injected at transformer blocks            │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+## Tech Stack
+
+- **Base Model**: FLUX.2 [dev] - 32B parameter flow matching transformer
+- **Runtime**: Python 3.10-3.12, PyTorch 2.8, CUDA 12.6+
+- **Infrastructure**: RunPod (H100/A100 GPUs recommended)
+- **Text Encoding**: Mistral-Small-3.2-24B-Instruct-2506
+- **Primitive Format**: Safetensors + YAML manifests
+- **Borrowed From**: IP-Adapter (styles), CtrLoRA (controls), LCM (speed)
+
+## Directory Structure
+
+```
+src/
+├── flux2/                    # Core FLUX.2 implementation
+│   ├── model.py              # 32B flow matching transformer
+│   ├── autoencoder.py        # VAE encoder/decoder
+│   ├── text_encoder.py       # Mistral embeddings
+│   ├── sampling.py           # Denoising & scheduling
+│   └── util.py               # Model loading
+│
+├── primitives/               # Semantic primitive system
+│   ├── schema.py             # Primitive manifest types
+│   ├── matcher.py            # Cosine similarity matching
+│   ├── loader.py             # Dynamic safetensors loading
+│   └── parser.py             # Triple parser (noun→pred→noun)
+│
+└── reality/                  # Reality engine core
+    ├── engine.py             # Main generation orchestrator
+    └── pipeline.py           # Dynamic pipeline assembly
+
+primitives/                   # Primitive library (safetensors + manifests)
+├── styles/
+│   ├── noir.safetensors
+│   └── noir.yaml
+├── concepts/
+├── controls/
+└── speed/
 
 scripts/
-└── cli.py            # Interactive generation CLI
+└── cli.py                    # Interactive REPL
+```
+
+## Primitive Manifest Schema
+
+```yaml
+# primitives/styles/noir.yaml
+name: noir
+version: "1.0"
+description: "Dark, high-contrast noir aesthetic"
+
+# Semantic anchors for matching
+embedding: "noir.embed.pt"  # Pre-computed embedding
+triggers:
+  - "noir"
+  - "dark"
+  - "shadow"
+  - "detective"
+  - "rain"
+  - "contrast"
+
+# Assets
+weights: "noir.safetensors"  # LoRA weights
+reference_images:            # Optional IP-Adapter style refs
+  - "noir_ref_1.jpg"
+  - "noir_ref_2.jpg"
+
+# Pipeline modifications
+params:
+  guidance_bias: 2.0         # Add to base guidance
+  contrast: 1.4              # Post-process adjustment
+  num_steps_min: 40          # Minimum steps for quality
+
+# Injection points
+inject:
+  modulation: true           # Inject into Modulation layers
+  cross_attention: true      # Modify cross-attention
 ```
 
 ## Quick Start
@@ -35,64 +131,69 @@ python3.10 -m venv .venv
 source .venv/bin/activate
 pip install -e . --extra-index-url https://download.pytorch.org/whl/cu126 --no-cache-dir
 
-# Set model paths (optional - auto-downloads if not set)
-export FLUX2_MODEL_PATH="<path-to-flux2-weights>"
-export AE_MODEL_PATH="<path-to-autoencoder>"
-
 # Run the reality engine
 export PYTHONPATH=src
 python scripts/cli.py
+```
+
+## Semantic Input Format
+
+```bash
+# Simple prompt (auto-parsed)
+> a dragon flying over a neon city at night
+
+# Explicit triples (more control)
+> dragon → soars over → city
+> neon lights → illuminate → streets
+> rain → falls on → everything
+
+# With primitive hints
+> [noir] detective → walks through → rainy alley
+> [fast] cat → sits on → windowsill
 ```
 
 ## CLI Commands
 
 | Command | Description |
 |---------|-------------|
-| `[Enter]` or `run` | Generate image from current config |
-| `show` | Display current configuration |
-| `reset` | Reset to default settings |
-| `prompt="..."` | Set the reality description |
-| `width=N height=N` | Set output dimensions |
-| `seed=N` | Set random seed for reproducibility |
-| `num_steps=N` | Denoising steps (default: 50) |
-| `guidance=N` | Guidance scale (default: 4.0) |
-| `input_images="a.jpg,b.jpg"` | Reference images for editing |
-| `upsample_prompt_mode="local"` | Enable prompt enhancement |
+| `[Enter]` or `run` | Generate from current config |
+| `show` | Display config + matched primitives |
+| `reset` | Reset to defaults |
+| `prompt="..."` | Set semantic description |
+| `primitives` | List available primitives |
+| `explain` | Show which primitives matched and why |
 
 ## RunPod Deployment
 
 ### GPU Requirements
-- **Minimum**: RTX 4090 (24GB) with quantized model + remote text encoder
-- **Recommended**: H100 (80GB) with CPU offloading
-- **Optimal**: GB200 or multi-GPU setup
+- **Minimum**: RTX 4090 (24GB) - quantized + remote text encoder
+- **Recommended**: H100 (80GB) - full model with CPU offloading
+- **Optimal**: GB200 or multi-GPU
 
-### RunPod Setup
+### Environment Variables
 ```bash
-# For H100 pods - use CPU offloading
-python scripts/cli.py --cpu_offloading True
-
-# Environment variables for RunPod
 export FLUX2_MODEL_PATH="/workspace/models/flux2"
 export AE_MODEL_PATH="/workspace/models/ae"
-export OPENROUTER_API_KEY="<your-key>"  # For prompt upsampling
+export PRIMITIVES_PATH="/workspace/primitives"
+export OPENROUTER_API_KEY="<your-key>"
 ```
 
-### Low-VRAM Mode (RTX 4090)
-Use diffusers with remote text encoder:
-```python
-from diffusers import Flux2Pipeline
-# See README.md for full example with remote_text_encoder()
-```
+## Creating New Primitives
 
-## Generation Parameters
+1. **Train a LoRA** (using CtrLoRA approach):
+   ```bash
+   # ~1000 images, ~1 hour on single GPU
+   python scripts/train_primitive.py --name "cyberpunk" --data ./cyberpunk_images/
+   ```
 
-| Parameter | Default | Description |
-|-----------|---------|-------------|
-| `width` | 1360 | Output width in pixels |
-| `height` | 768 | Output height in pixels |
-| `num_steps` | 50 | Denoising iterations (28 for speed) |
-| `guidance` | 4.0 | Prompt adherence strength |
-| `seed` | random | Reproducibility seed |
+2. **Generate embedding**:
+   ```bash
+   python scripts/embed_primitive.py --name "cyberpunk" --triggers "neon,cyber,future,dystopia"
+   ```
+
+3. **Create manifest** (`primitives/styles/cyberpunk.yaml`)
+
+4. **Drop in** - automatically indexed on next run
 
 ## Development
 
@@ -100,20 +201,44 @@ from diffusers import Flux2Pipeline
 # Install dev dependencies
 pip install -e ".[dev]"
 
-# Lint code
+# Lint & format
 ruff check src/ scripts/
-
-# Format code
 ruff format src/ scripts/
+
+# Test primitive matching
+python -m pytest tests/test_matcher.py -v
 ```
 
-## Key Files
+## Key Concepts
 
-- `scripts/cli.py` - Main entry point, interactive REPL
-- `src/flux2/model.py` - Transformer architecture
-- `src/flux2/sampling.py` - Diffusion sampling logic
-- `src/flux2/text_encoder.py` - Text-to-embedding pipeline
+### Semantic Similarity Matching
+- Embed user input using Mistral
+- Compare against pre-computed primitive embeddings
+- Select primitives above threshold (default: 0.6)
+- Weight influence by similarity score
 
-## Output
+### Dynamic Pipeline Assembly
+- No hardcoded if/else for styles
+- Pipeline emerges from matched primitives
+- Multiple primitives compose (weighted merge)
+- Only load what's needed (VRAM efficient)
 
-Generated images are saved to `output/sample_N.png` with EXIF metadata indicating AI generation.
+### Primitive Composition
+```
+matched: [noir: 0.91, creatures: 0.87, motion: 0.72]
+         ↓
+guidance = base + (0.91 * noir.guidance_bias) + (0.87 * creatures.guidance_bias)
+lora = merge(noir.weights * 0.91, creatures.weights * 0.87)
+schedule = shape(base_schedule, motion.schedule_params * 0.72)
+```
+
+## Borrowed Innovations
+
+| Source | What We Use |
+|--------|-------------|
+| FLUX.2 | Base 32B model, Mistral encoder |
+| IP-Adapter | Reference image style injection |
+| CtrLoRA | Efficient primitive training (~10% params) |
+| LCM | Fast generation primitives (4-step) |
+| Stable Cascade | Multi-stage pipeline concept |
+| Diffusers | Modular pipeline architecture |

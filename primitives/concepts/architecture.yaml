@@ -1,0 +1,25 @@
+name: architecture
+version: "1.0"
+description: "Buildings, cities, structures, and architectural elements"
+category: concepts
+
+triggers:
+  - city
+  - building
+  - architecture
+  - tower
+  - castle
+  - skyscraper
+  - street
+  - urban
+  - bridge
+  - cathedral
+  - temple
+  - ruins
+
+params:
+  guidance_bias: 0.5
+  num_steps_min: 40
+
+inject:
+  modulation: true

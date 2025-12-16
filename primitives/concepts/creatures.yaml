@@ -1,0 +1,26 @@
+name: creatures
+version: "1.0"
+description: "Mythical and fantastical creatures - dragons, beasts, monsters"
+category: concepts
+
+triggers:
+  - dragon
+  - creature
+  - monster
+  - beast
+  - mythical
+  - fantasy
+  - wings
+  - scales
+  - claws
+  - serpent
+  - phoenix
+  - griffin
+  - unicorn
+
+params:
+  guidance_bias: 1.0
+  num_steps_min: 45
+
+inject:
+  modulation: true

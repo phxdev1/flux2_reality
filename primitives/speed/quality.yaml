@@ -1,0 +1,19 @@
+name: quality
+version: "1.0"
+description: "Maximum quality mode with extended denoising"
+category: speed
+
+triggers:
+  - quality
+  - detailed
+  - high quality
+  - best
+  - refined
+  - polished
+
+params:
+  num_steps_override: 60
+  guidance_bias: 0.5
+
+inject:
+  modulation: false
