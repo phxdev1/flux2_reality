@@ -1,10 +1,13 @@
 # Flux Reality Engine - RunPod Deployment
-# Base: PyTorch with CUDA 12.6 support
+# Image: magickai/flux-reality-engine
+# Base: PyTorch with CUDA 12.4 support
 
 FROM runpod/pytorch:2.4.0-py3.11-cuda12.4.1-devel-ubuntu22.04
 
-LABEL maintainer="Flux Reality Engine"
-LABEL description="Semantic primitives-based image generation with FLUX.2"
+LABEL org.opencontainers.image.title="Flux Reality Engine"
+LABEL org.opencontainers.image.description="Semantic primitives-based image generation with FLUX.2"
+LABEL org.opencontainers.image.vendor="magickai"
+LABEL org.opencontainers.image.source="https://github.com/phxdev1/flux2_reality"
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1

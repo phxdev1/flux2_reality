@@ -65,17 +65,18 @@ For auto-scaling serverless inference:
 ### 1. Build Docker Image
 
 ```bash
-# Build locally
-docker build -t flux-reality-engine .
+# Build and tag for your registry
+docker build -t magickai/flux-reality-engine:latest .
 
-# Or use RunPod's container registry
+# Push to registry
+docker push magickai/flux-reality-engine:latest
 ```
 
 ### 2. Create Serverless Endpoint
 
 1. Go to RunPod Serverless
 2. Create new endpoint
-3. Use your Docker image
+3. Use image: `magickai/flux-reality-engine:latest`
 4. Configure:
    - Min Workers: 0
    - Max Workers: 3
