@@ -17,9 +17,10 @@ Deploy the Flux Reality Engine on RunPod for GPU-accelerated image generation.
 # SSH into your pod, then:
 cd /workspace
 
-# Clone the repository
+# Clone the repository and checkout the primitives branch
 git clone https://github.com/phxdev1/flux2_reality.git
 cd flux2_reality
+git checkout claude/create-claude-md-file-DI4FV
 
 # Run setup script
 chmod +x scripts/start_runpod.sh
@@ -65,6 +66,11 @@ For auto-scaling serverless inference:
 ### 1. Build Docker Image
 
 ```bash
+# Clone and checkout the primitives branch
+git clone https://github.com/phxdev1/flux2_reality.git
+cd flux2_reality
+git checkout claude/create-claude-md-file-DI4FV
+
 # Build and tag for your registry
 docker build -t magickai/flux-reality-engine:latest .
 

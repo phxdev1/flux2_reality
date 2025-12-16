@@ -15,9 +15,14 @@ cd /workspace
 if [ ! -d "flux2_reality" ]; then
     echo "Cloning repository..."
     git clone https://github.com/phxdev1/flux2_reality.git
+    cd flux2_reality
+    git checkout claude/create-claude-md-file-DI4FV
+else
+    cd flux2_reality
+    git fetch origin
+    git checkout claude/create-claude-md-file-DI4FV
+    git pull origin claude/create-claude-md-file-DI4FV
 fi
-
-cd flux2_reality
 
 # Install dependencies
 echo "Installing dependencies..."
